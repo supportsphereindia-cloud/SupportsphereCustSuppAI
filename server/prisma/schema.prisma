@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// Enums
+// ========================================
+
+enum TicketStatus {
+  OPEN
+  CLOSED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  AGENT
+  CUSTOMER
+}
+
+enum AuditAction {
+  TICKET_CREATED
+  TICKET_UPDATED
+  TICKET_CLOSED
+  AI_ANALYSIS_CREATED
+  MEMBER_ADDED
+  MEMBER_ROLE_UPDATED
+  MEMBER_REMOVED
+}
+
+// ========================================
+// Organization
+// ========================================
+
+model Organization {
+  id String @id @default(cuid())
+
+  name String
+  slug String @unique
+
+  members OrganizationMember[]
+  tickets Ticket[]
+
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+// ========================================
+// Organization Member
+// ========================================
+
+model OrganizationMember {
+  id String @id @default(cuid())
+
+  organizationId String
+  userId         String
+
+  role OrganizationRole @default(CUSTOMER)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A user can belong to an organization only once.
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([role])
+}
+
+// ========================================
+// User
+// ========================================
+
+model User {
+  id           String @id @default(cuid())
+  name         String
+  email        String @unique
+  passwordHash String
+
+  memberships OrganizationMember[]
+  tickets     Ticket[]
+
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========================================
+// Ticket
+// ========================================
+
+model Ticket {
+  id String @id @default(cuid())
+
+  title       String
+  description String
+  status      TicketStatus @default(OPEN)
+
+  // User who created/owns the ticket
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Organization that owns the ticket
+  //
+  // Nullable temporarily so existing tickets
+  // can be migrated safely into organizations.
+  organizationId String?
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // One ticket can have one AI analysis
+  aiAnalysis AIAnalysis?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ========================================
+// AI Analysis
+// ========================================
+
+model AIAnalysis {
+  id String @id @default(cuid())
+
+  // One AI analysis belongs to exactly one ticket
+  ticketId String @unique
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  summary               String
+  category              String
+  priority              String
+  sentiment             String
+  rootCause             String
+  suggestedResolution   String
+  customerResponse      String
+  recommendedNextAction String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========================================
+// Audit Log
+// ========================================
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  // Organization in which the action occurred
+  organizationId String
+
+  // User who performed the action
+  userId String
+
+  // Type of action performed
+  action AuditAction
+
+  // Type of entity affected
+  //
+  // Examples:
+  // TICKET
+  // AI_ANALYSIS
+  // ORGANIZATION_MEMBER
+  entityType String
+
+  // ID of the affected entity
+  entityId String?
+
+  // Additional information about the action
+  //
+  // Examples:
+  // - Previous and new ticket status
+  // - Previous and new member role
+  // - Ticket title
+  // - Other useful contextual information
+  metadata Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+}
