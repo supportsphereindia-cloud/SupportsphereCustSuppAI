@@ -8,7 +8,7 @@ const app = require("./app");
 const PORT = process.env.PORT || 5000;
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log("=================================");
   console.log("🚀 SupportSphere Backend Started");
   console.log(`🌐 Server Running on port ${PORT}`);
