@@ -6,11 +6,14 @@ import {
 } from "react-router-dom";
 
 import Login from "./pages/login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
+import CreateOrganization from "./pages/CreateOrganization";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
+import OrganizationRoute from "./routes/OrganizationRoute";
 
 function App() {
   return (
@@ -23,32 +26,48 @@ function App() {
           element={<Login />}
         />
 
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
         {/* Protected Routes */}
+
+        <Route
+          path="/organization/create"
+          element={
+            <ProtectedRoute>
+              <CreateOrganization />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Organization Routes */}
 
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <OrganizationRoute>
               <Dashboard />
-            </ProtectedRoute>
+            </OrganizationRoute>
           }
         />
 
         <Route
           path="/tickets/create"
           element={
-            <ProtectedRoute>
+            <OrganizationRoute>
               <CreateTicket />
-            </ProtectedRoute>
+            </OrganizationRoute>
           }
         />
 
         <Route
           path="/tickets/:id"
           element={
-            <ProtectedRoute>
+            <OrganizationRoute>
               <TicketDetails />
-            </ProtectedRoute>
+            </OrganizationRoute>
           }
         />
 
