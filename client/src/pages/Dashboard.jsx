@@ -4,6 +4,7 @@ import {
   Plus,
   Search,
   Ticket,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -16,9 +17,14 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { getTickets } from "../api/ticket.api";
 import useDebounce from "../hooks/useDebounce";
+import OrganizationSwitcher from "../components/OrganizationSwitcher";
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const {
+    user,
+    logout,
+    activeOrganizationId,
+  } = useAuth();
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -49,6 +55,7 @@ const Dashboard = () => {
   } = useQuery({
     queryKey: [
       "tickets",
+      activeOrganizationId,
       {
         status,
         search: debouncedSearch,
@@ -108,6 +115,15 @@ const Dashboard = () => {
   };
 
   /**
+   * Open Organization Members
+   *
+   * Uses existing OrganizationMembers.jsx
+   */
+  const handleOrganizationMembers = () => {
+    navigate("/organization/members");
+  };
+
+  /**
    * Open Ticket Details
    *
    * Uses existing TicketDetails.jsx
@@ -155,9 +171,13 @@ const Dashboard = () => {
 
           </div>
 
-          {/* User */}
+          {/* Organization + User */}
           <div className="flex items-center gap-4">
 
+            {/* Organization Switcher */}
+            <OrganizationSwitcher />
+
+            {/* User */}
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium">
                 {user?.name}
@@ -213,16 +233,31 @@ const Dashboard = () => {
           </div>
 
 
-          {/* Create Ticket */}
-          <button
-            type="button"
-            onClick={handleCreateTicket}
-            className="flex w-fit items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-500"
-          >
-            <Plus size={18} />
+          {/* Organization Members + Create Ticket */}
+          <div className="flex flex-wrap gap-3">
 
-            Create Ticket
-          </button>
+            <button
+              type="button"
+              onClick={handleOrganizationMembers}
+              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            >
+              <Users size={18} />
+
+              Organization Members
+            </button>
+
+            {/* Create Ticket */}
+            <button
+              type="button"
+              onClick={handleCreateTicket}
+              className="flex w-fit items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-blue-500"
+            >
+              <Plus size={18} />
+
+              Create Ticket
+            </button>
+
+          </div>
 
         </div>
 

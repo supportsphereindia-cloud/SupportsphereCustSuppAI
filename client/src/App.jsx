@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
 import CreateOrganization from "./pages/CreateOrganization";
+import OrganizationMembers from "./pages/OrganizationMembers";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import OrganizationRoute from "./routes/OrganizationRoute";
@@ -49,6 +50,17 @@ function App() {
           element={
             <OrganizationRoute>
               <Dashboard />
+            </OrganizationRoute>
+          }
+        />
+
+        {/* Organization Members */}
+
+        <Route
+          path="/organization/members"
+          element={
+            <OrganizationRoute>
+              <OrganizationMembers />
             </OrganizationRoute>
           }
         />
