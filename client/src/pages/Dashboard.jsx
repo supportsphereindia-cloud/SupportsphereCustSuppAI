@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  Activity,
   LogOut,
   Plus,
   Search,
@@ -124,6 +125,15 @@ const Dashboard = () => {
   };
 
   /**
+   * Open Audit Logs
+   *
+   * Uses existing AuditLogs.jsx
+   */
+  const handleAuditLogs = () => {
+    navigate("/organization/audit-logs");
+  };
+
+  /**
    * Open Ticket Details
    *
    * Uses existing TicketDetails.jsx
@@ -233,9 +243,10 @@ const Dashboard = () => {
           </div>
 
 
-          {/* Organization Members + Create Ticket */}
+          {/* Organization Members + Audit Logs + Create Ticket */}
           <div className="flex flex-wrap gap-3">
 
+            {/* Organization Members */}
             <button
               type="button"
               onClick={handleOrganizationMembers}
@@ -245,6 +256,19 @@ const Dashboard = () => {
 
               Organization Members
             </button>
+
+
+            {/* Audit Logs */}
+            <button
+              type="button"
+              onClick={handleAuditLogs}
+              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            >
+              <Activity size={18} />
+
+              Audit Logs
+            </button>
+
 
             {/* Create Ticket */}
             <button

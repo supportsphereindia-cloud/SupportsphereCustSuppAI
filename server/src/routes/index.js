@@ -101,7 +101,7 @@ router.use(
 // =====================================================
 
 router.use(
-  "/audit",
+  "/audit-logs",
   auditRoutes
 );
 

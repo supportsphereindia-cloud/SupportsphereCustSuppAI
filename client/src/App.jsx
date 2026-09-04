@@ -12,6 +12,7 @@ import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
 import CreateOrganization from "./pages/CreateOrganization";
 import OrganizationMembers from "./pages/OrganizationMembers";
+import AuditLogs from "./pages/AuditLogs";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import OrganizationRoute from "./routes/OrganizationRoute";
@@ -61,6 +62,17 @@ function App() {
           element={
             <OrganizationRoute>
               <OrganizationMembers />
+            </OrganizationRoute>
+          }
+        />
+
+        {/* Audit Logs */}
+
+        <Route
+          path="/organization/audit-logs"
+          element={
+            <OrganizationRoute>
+              <AuditLogs />
             </OrganizationRoute>
           }
         />
