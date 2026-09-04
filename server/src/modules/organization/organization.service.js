@@ -18,6 +18,10 @@ const {
   getUserByEmail,
 } = require("../user/user.service");
 
+const {
+  createAuditLogEntry,
+} = require("../audit/audit.service");
+
 
 /**
  * Create Organization
@@ -188,11 +192,38 @@ const addMemberToOrganization = async (
   /**
    * Create membership.
    */
-  return createOrganizationMember({
+  const member =
+    await createOrganizationMember({
+      organizationId,
+      userId: user.id,
+      role,
+    });
+
+
+  // ========================================
+  // Create Audit Log
+  // ========================================
+
+  await createAuditLogEntry({
     organizationId,
-    userId: user.id,
-    role,
+    userId: actingUserId,
+
+    action: "MEMBER_ADDED",
+
+    entityType: "ORGANIZATION_MEMBER",
+
+    entityId: member.id,
+
+    metadata: {
+      memberUserId: user.id,
+      memberEmail: user.email,
+      memberName: user.name,
+      role: member.role,
+    },
   });
+
+
+  return member;
 };
 
 
@@ -312,12 +343,50 @@ const changeMemberRole = async (
 
 
   /**
+   * Store the previous role before
+   * updating the membership.
+   */
+  const previousRole =
+    member.role;
+
+
+  /**
    * Update member role.
    */
-  return updateOrganizationMemberRole(
-    memberId,
-    newRole
-  );
+  const updatedMember =
+    await updateOrganizationMemberRole(
+      memberId,
+      newRole
+    );
+
+
+  // ========================================
+  // Create Audit Log
+  // ========================================
+
+  await createAuditLogEntry({
+    organizationId,
+    userId: actingUserId,
+
+    action: "MEMBER_ROLE_UPDATED",
+
+    entityType: "ORGANIZATION_MEMBER",
+
+    entityId: member.id,
+
+    metadata: {
+      memberUserId: member.userId,
+      memberEmail:
+        member.user?.email || null,
+      memberName:
+        member.user?.name || null,
+      previousRole,
+      newRole: updatedMember.role,
+    },
+  });
+
+
+  return updatedMember;
 };
 
 
@@ -392,9 +461,37 @@ const removeMemberFromOrganization = async (
   /**
    * Remove the member.
    */
-  return deleteOrganizationMember(
+  await deleteOrganizationMember(
     memberId
   );
+
+
+  // ========================================
+  // Create Audit Log
+  // ========================================
+
+  await createAuditLogEntry({
+    organizationId,
+    userId: actingUserId,
+
+    action: "MEMBER_REMOVED",
+
+    entityType: "ORGANIZATION_MEMBER",
+
+    entityId: member.id,
+
+    metadata: {
+      memberUserId: member.userId,
+      memberEmail:
+        member.user?.email || null,
+      memberName:
+        member.user?.name || null,
+      role: member.role,
+    },
+  });
+
+
+  return member;
 };
 
 
