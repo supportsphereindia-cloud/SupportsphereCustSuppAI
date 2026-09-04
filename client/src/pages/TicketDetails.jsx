@@ -44,6 +44,8 @@ import {
   analyzeTicket,
 } from "../api/ticket.api";
 
+import { useAuth } from "../context/AuthContext";
+
 
 // ========================================
 // Edit Ticket Validation
@@ -83,6 +85,10 @@ const editTicketSchema = z.object({
 const TicketDetails = () => {
   const { id } = useParams();
 
+  const {
+    activeOrganizationId,
+  } = useAuth();
+
   const navigate = useNavigate();
 
   const queryClient = useQueryClient();
@@ -114,13 +120,18 @@ const TicketDetails = () => {
   } = useQuery({
     queryKey: [
       "ticket",
+      activeOrganizationId,
       id,
     ],
 
     queryFn: () =>
       getTicketById(id),
 
-    enabled: Boolean(id),
+    enabled:
+      Boolean(
+        id &&
+        activeOrganizationId
+      ),
   });
 
 
@@ -221,6 +232,7 @@ const TicketDetails = () => {
         queryClient.invalidateQueries({
           queryKey: [
             "ticket",
+            activeOrganizationId,
             id,
           ],
         });
@@ -262,6 +274,7 @@ const TicketDetails = () => {
         queryClient.invalidateQueries({
           queryKey: [
             "ticket",
+            activeOrganizationId,
             id,
           ],
         });
@@ -312,6 +325,7 @@ const TicketDetails = () => {
         queryClient.invalidateQueries({
           queryKey: [
             "ticket",
+            activeOrganizationId,
             id,
           ],
         });
