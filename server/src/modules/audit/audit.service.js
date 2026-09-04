@@ -218,12 +218,12 @@ const getOrganizationAuditLogs = async (
   // ========================================
 
   return {
-    auditLogs,
+    logs: auditLogs,
 
     pagination: {
       page: parsedPage,
       limit: parsedLimit,
-      totalLogs,
+      total: totalLogs,
       totalPages,
 
       hasNextPage:
@@ -249,8 +249,8 @@ const getOrganizationAuditLogs = async (
  * - auditLogId
  * - organizationId
  *
- * This prevents a user from accessing
- * an audit log belonging to another
+ * This prevents a user from accessing an
+ * audit log belonging to another
  * organization even if they know its ID.
  */
 const getAuditLogById = async (
