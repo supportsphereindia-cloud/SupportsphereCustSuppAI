@@ -27,6 +27,38 @@ export const getKnowledgeDocuments =
 
 
 // ========================================
+// Upload Knowledge Document
+// ========================================
+
+/**
+ * Upload a company knowledge PDF
+ *
+ * Calls:
+ *
+ * POST /api/v1/knowledge
+ *
+ * Uses multipart/form-data because the
+ * request contains a PDF file.
+ */
+export const uploadKnowledgeDocument =
+  async (file) => {
+    const formData = new FormData();
+
+    formData.append(
+      "file",
+      file
+    );
+
+    const response = await api.post(
+      "/knowledge",
+      formData
+    );
+
+    return response.data;
+  };
+
+
+// ========================================
 // Search Company Knowledge
 // ========================================
 
