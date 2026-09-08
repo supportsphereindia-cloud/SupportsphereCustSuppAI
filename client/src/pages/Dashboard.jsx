@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Activity,
+  FileText,
   LogOut,
   Plus,
   Search,
@@ -134,6 +135,15 @@ const Dashboard = () => {
   };
 
   /**
+   * Open Company Knowledge
+   *
+   * Uses existing Knowledge.jsx
+   */
+  const handleKnowledge = () => {
+    navigate("/knowledge");
+  };
+
+  /**
    * Open Ticket Details
    *
    * Uses existing TicketDetails.jsx
@@ -243,7 +253,7 @@ const Dashboard = () => {
           </div>
 
 
-          {/* Organization Members + Audit Logs + Create Ticket */}
+          {/* Organization Members + Audit Logs + Knowledge + Create Ticket */}
           <div className="flex flex-wrap gap-3">
 
             {/* Organization Members */}
@@ -267,6 +277,18 @@ const Dashboard = () => {
               <Activity size={18} />
 
               Audit Logs
+            </button>
+
+
+            {/* Company Knowledge */}
+            <button
+              type="button"
+              onClick={handleKnowledge}
+              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+            >
+              <FileText size={18} />
+
+              Company Knowledge
             </button>
 
 

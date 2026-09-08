@@ -13,6 +13,7 @@ import TicketDetails from "./pages/TicketDetails";
 import CreateOrganization from "./pages/CreateOrganization";
 import OrganizationMembers from "./pages/OrganizationMembers";
 import AuditLogs from "./pages/AuditLogs";
+import Knowledge from "./pages/Knowledge";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import OrganizationRoute from "./routes/OrganizationRoute";
@@ -73,6 +74,17 @@ function App() {
           element={
             <OrganizationRoute>
               <AuditLogs />
+            </OrganizationRoute>
+          }
+        />
+
+        {/* Company Knowledge */}
+
+        <Route
+          path="/knowledge"
+          element={
+            <OrganizationRoute>
+              <Knowledge />
             </OrganizationRoute>
           }
         />

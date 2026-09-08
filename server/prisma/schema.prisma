@@ -33,6 +33,12 @@ enum AuditAction {
   MEMBER_REMOVED
 }
 
+enum KnowledgeDocumentStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
 // ========================================
 // Organization
 // ========================================
@@ -47,6 +53,8 @@ model Organization {
   tickets Ticket[]
 
   auditLogs AuditLog[]
+
+  knowledgeDocuments KnowledgeDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,7 +75,7 @@ model OrganizationMember {
   role OrganizationRole @default(CUSTOMER)
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -195,7 +203,7 @@ model AuditLog {
   metadata Json?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -205,4 +213,62 @@ model AuditLog {
   @@index([entityType])
   @@index([entityId])
   @@index([createdAt])
+}
+
+// ========================================
+// Knowledge Document
+// ========================================
+
+model KnowledgeDocument {
+  id String @id @default(cuid())
+
+  // Organization that owns this knowledge document
+  organizationId String
+
+  // Original uploaded file information
+  fileName String
+  fileUrl  String
+
+  // Document processing state
+  status KnowledgeDocumentStatus @default(PROCESSING)
+
+  // Number of text chunks generated from the document
+  chunkCount Int @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  chunks KnowledgeChunk[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+// ========================================
+// Knowledge Chunk
+// ========================================
+
+model KnowledgeChunk {
+  id String @id @default(cuid())
+
+  // Document from which this chunk was extracted
+  documentId String
+
+  // Extracted text
+  content String
+
+  // Position of the chunk within the document
+  chunkIndex Int
+
+  // 1536-dimensional embedding generated from the chunk content
+  embedding Unsupported("vector(1536)")?
+
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([documentId])
+  @@index([chunkIndex])
 }

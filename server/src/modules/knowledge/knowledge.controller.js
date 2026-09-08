@@ -1,0 +1,237 @@
+const asyncHandler = require("../../utils/asyncHandler");
+const ApiResponse = require("../../shared/responses/ApiResponse");
+
+const {
+  uploadKnowledgeDocument,
+} = require("./knowledge.service");
+
+const {
+  searchKnowledge,
+} = require("./retrieval.service");
+
+const {
+  generateGroundedAnswer,
+} = require("../../services/llm.service");
+
+const {
+  deleteKnowledgeDocument,
+  findKnowledgeDocumentsByOrganizationId,
+} = require("./knowledge.repository");
+
+
+// ========================================
+// Upload Knowledge Document
+// ========================================
+
+const uploadDocument = asyncHandler(
+  async (req, res) => {
+    const organizationId =
+      req.organization.id;
+
+    const document =
+      await uploadKnowledgeDocument({
+        organizationId,
+        file: req.file,
+      });
+
+    return res.status(201).json(
+      new ApiResponse(
+        201,
+        "Knowledge document uploaded successfully",
+        document
+      )
+    );
+  }
+);
+
+
+// ========================================
+// Get Knowledge Documents
+// ========================================
+
+const getKnowledgeDocuments =
+  asyncHandler(
+    async (req, res) => {
+      const organizationId =
+        req.organization.id;
+
+
+      // ========================================
+      // Fetch Organization Knowledge Documents
+      // ========================================
+
+      const documents =
+        await findKnowledgeDocumentsByOrganizationId(
+          organizationId
+        );
+
+
+      // ========================================
+      // Return Knowledge Documents
+      // ========================================
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          "Knowledge documents fetched successfully",
+          documents
+        )
+      );
+    }
+  );
+
+
+// ========================================
+// Search Knowledge
+// ========================================
+
+const searchKnowledgeController =
+  asyncHandler(
+    async (req, res) => {
+      const organizationId =
+        req.organization.id;
+
+      const {
+        question,
+      } = req.body;
+
+
+      // ========================================
+      // Retrieve Relevant Knowledge
+      // ========================================
+
+      const retrievalResult =
+        await searchKnowledge({
+          organizationId,
+          question,
+        });
+
+
+      // ========================================
+      // No Relevant Knowledge
+      // ========================================
+
+      if (
+        !retrievalResult.hasRelevantKnowledge
+      ) {
+        return res.status(200).json(
+          new ApiResponse(
+            200,
+            "No relevant company knowledge found",
+            {
+              answer:
+                "I don't have that information in the provided company knowledge.",
+
+              sources: [],
+            }
+          )
+        );
+      }
+
+
+      // ========================================
+      // Generate Grounded Answer
+      // ========================================
+
+      const answer =
+        await generateGroundedAnswer({
+          question,
+
+          knowledgeChunks:
+            retrievalResult.results,
+        });
+
+
+      // ========================================
+      // Build Sources
+      // ========================================
+
+      const sources =
+        retrievalResult.results.map(
+          (result) => ({
+            documentId:
+              result.documentId,
+
+            fileName:
+              result.fileName,
+
+            chunkIndex:
+              result.chunkIndex,
+
+            similarity:
+              Number(
+                result.similarity
+              ),
+          })
+        );
+
+
+      // ========================================
+      // Return Grounded Answer
+      // ========================================
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          "Knowledge answer generated successfully",
+          {
+            answer,
+
+            sources,
+          }
+        )
+      );
+    }
+  );
+
+
+// ========================================
+// Delete Knowledge Document
+// ========================================
+
+const deleteDocument = asyncHandler(
+  async (req, res) => {
+    const organizationId =
+      req.organization.id;
+
+    const {
+      documentId,
+    } = req.params;
+
+    const result =
+      await deleteKnowledgeDocument(
+        documentId,
+        organizationId
+      );
+
+    if (result.count === 0) {
+      return res.status(404).json(
+        new ApiResponse(
+          404,
+          "Knowledge document not found",
+          null
+        )
+      );
+    }
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Knowledge document deleted successfully",
+        null
+      )
+    );
+  }
+);
+
+
+// ========================================
+// Exports
+// ========================================
+
+module.exports = {
+  uploadDocument,
+  getKnowledgeDocuments,
+  searchKnowledgeController,
+  deleteDocument,
+};

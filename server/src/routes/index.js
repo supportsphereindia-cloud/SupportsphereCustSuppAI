@@ -24,6 +24,10 @@ const auditRoutes = require(
   "../modules/audit/audit.routes"
 );
 
+const knowledgeRoutes = require(
+  "../modules/knowledge/knowledge.routes"
+);
+
 const router = express.Router();
 
 
@@ -103,6 +107,16 @@ router.use(
 router.use(
   "/audit-logs",
   auditRoutes
+);
+
+
+// =====================================================
+// Knowledge Routes
+// =====================================================
+
+router.use(
+  "/knowledge",
+  knowledgeRoutes
 );
 
 
