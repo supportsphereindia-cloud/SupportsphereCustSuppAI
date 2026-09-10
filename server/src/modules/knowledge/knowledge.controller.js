@@ -15,8 +15,13 @@ const {
 
 const {
   deleteKnowledgeDocument,
+  findKnowledgeDocumentById,
   findKnowledgeDocumentsByOrganizationId,
 } = require("./knowledge.repository");
+
+const {
+  createAuditLogEntry,
+} = require("../audit/audit.service");
 
 
 // ========================================
@@ -28,11 +33,37 @@ const uploadDocument = asyncHandler(
     const organizationId =
       req.organization.id;
 
+    const userId =
+      req.user.id;
+
     const document =
       await uploadKnowledgeDocument({
         organizationId,
         file: req.file,
       });
+
+
+    // ========================================
+    // Create Audit Log
+    // ========================================
+
+    await createAuditLogEntry({
+      organizationId,
+      userId,
+      action: "KNOWLEDGE_DOCUMENT_UPLOADED",
+      entityType: "KNOWLEDGE_DOCUMENT",
+      entityId: document.id,
+      metadata: {
+        fileName: document.fileName,
+        status: document.status,
+        chunkCount: document.chunkCount,
+      },
+    });
+
+
+    // ========================================
+    // Return Uploaded Document
+    // ========================================
 
     return res.status(201).json(
       new ApiResponse(
@@ -91,6 +122,9 @@ const searchKnowledgeController =
       const organizationId =
         req.organization.id;
 
+      const userId =
+        req.user.id;
+
       const {
         question,
       } = req.body;
@@ -114,6 +148,26 @@ const searchKnowledgeController =
       if (
         !retrievalResult.hasRelevantKnowledge
       ) {
+
+        // ========================================
+        // Create Audit Log
+        // ========================================
+
+        await createAuditLogEntry({
+          organizationId,
+          userId,
+          action: "KNOWLEDGE_QUERY_SUBMITTED",
+          entityType: "KNOWLEDGE_QUERY",
+          metadata: {
+            questionLength:
+              question.length,
+
+            result:
+              "NO_RELEVANT_KNOWLEDGE",
+          },
+        });
+
+
         return res.status(200).json(
           new ApiResponse(
             200,
@@ -167,6 +221,28 @@ const searchKnowledgeController =
 
 
       // ========================================
+      // Create Audit Log
+      // ========================================
+
+      await createAuditLogEntry({
+        organizationId,
+        userId,
+        action: "KNOWLEDGE_QUERY_SUBMITTED",
+        entityType: "KNOWLEDGE_QUERY",
+        metadata: {
+          questionLength:
+            question.length,
+
+          result:
+            "ANSWERED",
+
+          sourceCount:
+            sources.length,
+        },
+      });
+
+
+      // ========================================
       // Return Grounded Answer
       // ========================================
 
@@ -194,15 +270,58 @@ const deleteDocument = asyncHandler(
     const organizationId =
       req.organization.id;
 
+    const userId =
+      req.user.id;
+
     const {
       documentId,
     } = req.params;
+
+
+    // ========================================
+    // Find Knowledge Document
+    // ========================================
+    //
+    // The organization ID is included in the
+    // query to prevent cross-organization access.
+    //
+
+    const document =
+      await findKnowledgeDocumentById(
+        documentId,
+        organizationId
+      );
+
+
+    // ========================================
+    // Document Not Found
+    // ========================================
+
+    if (!document) {
+      return res.status(404).json(
+        new ApiResponse(
+          404,
+          "Knowledge document not found",
+          null
+        )
+      );
+    }
+
+
+    // ========================================
+    // Delete Knowledge Document
+    // ========================================
 
     const result =
       await deleteKnowledgeDocument(
         documentId,
         organizationId
       );
+
+
+    // ========================================
+    // Verify Deletion
+    // ========================================
 
     if (result.count === 0) {
       return res.status(404).json(
@@ -213,6 +332,34 @@ const deleteDocument = asyncHandler(
         )
       );
     }
+
+
+    // ========================================
+    // Create Audit Log
+    // ========================================
+
+    await createAuditLogEntry({
+      organizationId,
+      userId,
+      action: "KNOWLEDGE_DOCUMENT_DELETED",
+      entityType: "KNOWLEDGE_DOCUMENT",
+      entityId: document.id,
+      metadata: {
+        fileName:
+          document.fileName,
+
+        status:
+          document.status,
+
+        chunkCount:
+          document.chunkCount,
+      },
+    });
+
+
+    // ========================================
+    // Return Success Response
+    // ========================================
 
     return res.status(200).json(
       new ApiResponse(

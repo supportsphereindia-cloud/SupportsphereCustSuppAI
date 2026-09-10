@@ -3,9 +3,6 @@ import axios from "axios";
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use(
@@ -18,11 +15,13 @@ api.interceptors.request.use(
         "activeOrganizationId"
       );
 
+    // Add JWT authentication header
     if (token) {
       config.headers.Authorization =
         `Bearer ${token}`;
     }
 
+    // Add active organization header
     if (activeOrganizationId) {
       config.headers["X-Organization-Id"] =
         activeOrganizationId;

@@ -1,10 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 // ========================================
@@ -31,6 +33,9 @@ enum AuditAction {
   MEMBER_ADDED
   MEMBER_ROLE_UPDATED
   MEMBER_REMOVED
+  KNOWLEDGE_DOCUMENT_UPLOADED
+  KNOWLEDGE_DOCUMENT_DELETED
+  KNOWLEDGE_QUERY_SUBMITTED
 }
 
 enum KnowledgeDocumentStatus {
