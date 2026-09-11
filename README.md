@@ -55,3 +55,15 @@ ask a grounded AI assistant questions about that knowledge.
    │   Prisma    │  │             │  │             │
    │  pgvector   │  │             │  │             │
    └─────────────┘  └─────────────┘  └─────────────┘
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React.js, Vite, Tailwind CSS, Axios, React Router
+- **Backend:** Node.js, Express.js, JWT, bcrypt, Zod, Multer
+- **Database:** PostgreSQL, Neon, Prisma ORM
+- **AI / RAG:** OpenRouter, embeddings, pgvector, HNSW, vector similarity search
+- **Documents:** Cloudinary, PDF text extraction, custom chunking
+- **Security:** JWT authentication, RBAC, organization-level isolation, audit logs
+- **Deployment:** Vercel (Frontend), Render (Backend), Neon (Database)
+- **Language:** JavaScript
+- **Version Control:** Git, GitHub
