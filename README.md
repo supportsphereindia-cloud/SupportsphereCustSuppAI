@@ -55,8 +55,9 @@ ask a grounded AI assistant questions about that knowledge.
    │   Prisma    │  │             │  │             │
    │  pgvector   │  │             │  │             │
    └─────────────┘  └─────────────┘  └─────────────┘
+----
 
-## 🛠️ Tech Stack
+🛠️ Tech Stack
 
 - **Frontend:** React.js, Vite, Tailwind CSS, Axios, React Router
 - **Backend:** Node.js, Express.js, JWT, bcrypt, Zod, Multer
