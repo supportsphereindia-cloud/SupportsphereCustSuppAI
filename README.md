@@ -1,10 +1,3 @@
-You're right, bro. I misunderstood.
-
-You want **one single clean Markdown code block containing the entire `README.md`**, so you can click **Copy** once and paste it directly into GitHub/VS Code.
-
-Here it is — **nothing outside the code block**:
-
-````markdown
 # SupportSphere
 
 ## AI-Powered Customer Support & Ticket Management Platform
