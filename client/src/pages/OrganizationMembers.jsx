@@ -94,33 +94,38 @@ const OrganizationMembers = () => {
     activeMembership?.role;
 
 
+  /**
+   * OWNER and ADMIN can manage
+   * organization members.
+   *
+   * This includes adding and removing
+   * members, but not changing roles.
+   */
   const canManageMembers =
     currentUserRole === "OWNER" ||
     currentUserRole === "ADMIN";
 
 
+  /**
+   * OWNER and ADMIN can add members.
+   */
   const canAddMembers =
     currentUserRole === "OWNER" ||
     currentUserRole === "ADMIN";
 
 
   /**
-   * OWNER can assign all roles.
-   * ADMIN cannot assign OWNER.
+   * Normal member creation cannot
+   * assign the OWNER role.
+   *
+   * Ownership transfer will be handled
+   * separately with stricter safeguards.
    */
-  const availableRoles =
-    currentUserRole === "OWNER"
-      ? [
-          "OWNER",
-          "ADMIN",
-          "AGENT",
-          "CUSTOMER",
-        ]
-      : [
-          "ADMIN",
-          "AGENT",
-          "CUSTOMER",
-        ];
+  const availableRoles = [
+    "ADMIN",
+    "AGENT",
+    "CUSTOMER",
+  ];
 
 
   /**
@@ -625,11 +630,20 @@ const OrganizationMembers = () => {
                   member.role ===
                   "OWNER";
 
+                /**
+                 * Only OWNER can change
+                 * member roles.
+                 */
                 const canEditThisMember =
-                  canManageMembers &&
+                  currentUserRole === "OWNER" &&
                   !isOwner &&
                   !isCurrentUser;
 
+                /**
+                 * OWNER and ADMIN can remove
+                 * non-owner members, except
+                 * themselves.
+                 */
                 const canRemoveThisMember =
                   canManageMembers &&
                   !isOwner &&

@@ -124,7 +124,8 @@ const getMyOrganizations = async (
  *
  * OWNER and ADMIN can add existing users.
  *
- * ADMIN cannot assign the OWNER role.
+ * OWNER cannot assign the OWNER role
+ * through normal member creation.
  */
 const addMemberToOrganization = async (
   organizationId,
@@ -134,9 +135,12 @@ const addMemberToOrganization = async (
 ) => {
   /**
    * Validate requested role.
+   *
+   * OWNER is intentionally excluded.
+   * Ownership transfer will be handled
+   * separately with stricter safeguards.
    */
   const allowedRoles = [
-    "OWNER",
     "ADMIN",
     "AGENT",
     "CUSTOMER",
@@ -151,16 +155,20 @@ const addMemberToOrganization = async (
 
 
   /**
-   * ADMIN users cannot create
-   * another OWNER.
+   * Verify that only OWNER and ADMIN
+   * can add members.
+   *
+   * The route already enforces this
+   * through RBAC middleware, but keeping
+   * this check here provides defense-in-depth.
    */
   if (
-    actingUserRole === "ADMIN" &&
-    role === "OWNER"
+    actingUserRole !== "OWNER" &&
+    actingUserRole !== "ADMIN"
   ) {
     throw new ApiError(
       403,
-      "ADMIN users cannot assign the OWNER role"
+      "You do not have permission to add members"
     );
   }
 
@@ -242,9 +250,11 @@ const getOrganizationMembers = async (
 /**
  * Update Organization Member Role
  *
- * OWNER can change non-owner roles.
- * ADMIN can change non-owner roles but
- * cannot assign OWNER.
+ * Only OWNER can change member roles.
+ *
+ * OWNER cannot modify another OWNER.
+ * Ownership transfer will be implemented
+ * separately with stricter safeguards.
  */
 const changeMemberRole = async (
   organizationId,
@@ -254,10 +264,28 @@ const changeMemberRole = async (
   newRole
 ) => {
   /**
+   * Only OWNER can change member roles.
+   *
+   * The route also enforces this through
+   * RBAC middleware, but this service-level
+   * check provides defense-in-depth.
+   */
+  if (actingUserRole !== "OWNER") {
+    throw new ApiError(
+      403,
+      "Only the OWNER can change member roles"
+    );
+  }
+
+
+  /**
    * Validate requested role.
+   *
+   * OWNER is intentionally excluded.
+   * Ownership transfer will be handled
+   * separately with stricter safeguards.
    */
   const allowedRoles = [
-    "OWNER",
     "ADMIN",
     "AGENT",
     "CUSTOMER",
@@ -267,21 +295,6 @@ const changeMemberRole = async (
     throw new ApiError(
       400,
       "Invalid organization role"
-    );
-  }
-
-
-  /**
-   * ADMIN cannot promote anyone
-   * to OWNER.
-   */
-  if (
-    actingUserRole === "ADMIN" &&
-    newRole === "OWNER"
-  ) {
-    throw new ApiError(
-      403,
-      "ADMIN users cannot assign the OWNER role"
     );
   }
 

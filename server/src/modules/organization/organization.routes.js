@@ -64,12 +64,12 @@ router.post(
 /**
  * Get Organization Members
  *
- * OWNER, ADMIN and AGENT can view members.
+ * OWNER and ADMIN can view members.
  */
 router.get(
   "/members",
   organizationMiddleware,
-  requireRole("OWNER", "ADMIN", "AGENT"),
+  requireRole("OWNER", "ADMIN"),
   getMembers
 );
 
@@ -82,7 +82,7 @@ router.get(
 router.patch(
   "/members/:memberId/role",
   organizationMiddleware,
-  requireRole("OWNER", "ADMIN"),
+  requireRole("OWNER"),
   updateMemberRole
 );
 

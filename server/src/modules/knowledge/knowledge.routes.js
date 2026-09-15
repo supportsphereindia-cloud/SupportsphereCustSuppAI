@@ -22,17 +22,36 @@ const {
 
 
 // ========================================
-// Knowledge Document Routes
+// Knowledge Routes
 // ========================================
 
 /**
- * Knowledge document routes require:
+ * Knowledge routes require:
  *
  * 1. Authentication
  * 2. Organization membership
- * 3. Owner/Admin/Agent role
- * 4. PDF upload validation
- * 5. Request validation
+ * 3. Role-based access control
+ *
+ * Role permissions:
+ *
+ * OWNER
+ * - Upload knowledge documents
+ * - View knowledge documents
+ * - Use AI Knowledge Assistant
+ * - Delete knowledge documents
+ *
+ * ADMIN
+ * - Upload knowledge documents
+ * - View knowledge documents
+ * - Use AI Knowledge Assistant
+ * - Delete knowledge documents
+ *
+ * AGENT
+ * - View knowledge documents
+ * - Use AI Knowledge Assistant
+ *
+ * CUSTOMER
+ * - Use AI Knowledge Assistant
  *
  * X-Organization-Id header:
  *
@@ -44,11 +63,15 @@ const {
 // Upload Knowledge Document
 // ========================================
 
+/**
+ * OWNER and ADMIN can upload
+ * knowledge documents.
+ */
 router.post(
   "/",
   authMiddleware,
   organizationMiddleware,
-  requireRole("OWNER", "ADMIN", "AGENT"),
+  requireRole("OWNER", "ADMIN"),
   uploadPdf.single("file"),
   validate(uploadKnowledgeDocumentSchema),
   uploadDocument
@@ -59,6 +82,13 @@ router.post(
 // Get Knowledge Documents
 // ========================================
 
+/**
+ * OWNER, ADMIN and AGENT can view
+ * company knowledge documents.
+ *
+ * CUSTOMER cannot directly access
+ * the internal knowledge document list.
+ */
 router.get(
   "/",
   authMiddleware,
@@ -72,11 +102,25 @@ router.get(
 // Search Knowledge
 // ========================================
 
+/**
+ * All organization roles can use
+ * the AI Knowledge Assistant.
+ *
+ * OWNER
+ * ADMIN
+ * AGENT
+ * CUSTOMER
+ */
 router.post(
   "/search",
   authMiddleware,
   organizationMiddleware,
-  requireRole("OWNER", "ADMIN", "AGENT"),
+  requireRole(
+    "OWNER",
+    "ADMIN",
+    "AGENT",
+    "CUSTOMER"
+  ),
   validate(searchKnowledgeSchema),
   searchKnowledgeController
 );
@@ -86,11 +130,15 @@ router.post(
 // Delete Knowledge Document
 // ========================================
 
+/**
+ * OWNER and ADMIN can delete
+ * knowledge documents.
+ */
 router.delete(
   "/:documentId",
   authMiddleware,
   organizationMiddleware,
-  requireRole("OWNER", "ADMIN", "AGENT"),
+  requireRole("OWNER", "ADMIN"),
   deleteDocument
 );
 

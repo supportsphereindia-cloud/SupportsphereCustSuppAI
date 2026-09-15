@@ -32,58 +32,38 @@ const Knowledge = () => {
   const navigate = useNavigate();
 
   const {
+    user,
     activeOrganizationId,
   } = useAuth();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useKnowledgeDocuments(
-    activeOrganizationId
-  );
-
-
   // ========================================
-  // Upload State
+  // Determine Current Organization Role
   // ========================================
 
-  const [
-    selectedFile,
-    setSelectedFile,
-  ] = useState(null);
+  const currentMembership =
+    user?.memberships?.find(
+      (membership) =>
+        membership.organizationId ===
+        activeOrganizationId
+    );
 
-  const [
-    isUploading,
-    setIsUploading,
-  ] = useState(false);
+  const currentUserRole =
+    currentMembership?.role;
 
-  const [
-    uploadError,
-    setUploadError,
-  ] = useState("");
+  const canManageKnowledge =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN";
 
-  const [
-    uploadSuccess,
-    setUploadSuccess,
-  ] = useState("");
+  const canViewKnowledge =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT";
 
-
-  // ========================================
-  // Delete State
-  // ========================================
-
-  const [
-    deletingDocumentId,
-    setDeletingDocumentId,
-  ] = useState(null);
-
-  const [
-    deleteError,
-    setDeleteError,
-  ] = useState("");
+  const canUseAI =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT" ||
+    currentUserRole === "CUSTOMER";
 
 
   // ========================================
@@ -117,274 +97,7 @@ const Knowledge = () => {
 
 
   // ========================================
-  // Knowledge Documents
-  // ========================================
-
-  const documents =
-    data?.data || [];
-
-
-  // ========================================
-  // Knowledge Readiness
-  // ========================================
-
-  const hasReadyKnowledge =
-    documents.some(
-      (document) =>
-        document.status === "READY"
-    );
-
-
-  // ========================================
-  // Handle File Selection
-  // ========================================
-
-  const handleFileChange = (
-    event
-  ) => {
-    const file =
-      event.target.files?.[0];
-
-    setUploadError("");
-    setUploadSuccess("");
-    setDeleteError("");
-
-    if (!file) {
-      setSelectedFile(null);
-      return;
-    }
-
-
-    // ========================================
-    // Validate File Type
-    // ========================================
-
-    if (
-      file.type !==
-      "application/pdf"
-    ) {
-      setSelectedFile(null);
-
-      setUploadError(
-        "Only PDF files are allowed."
-      );
-
-      event.target.value = "";
-
-      return;
-    }
-
-
-    // ========================================
-    // Validate File Size
-    // ========================================
-
-    const maxFileSize =
-      10 * 1024 * 1024;
-
-    if (
-      file.size >
-      maxFileSize
-    ) {
-      setSelectedFile(null);
-
-      setUploadError(
-        "PDF file size must not exceed 10 MB."
-      );
-
-      event.target.value = "";
-
-      return;
-    }
-
-
-    // ========================================
-    // Store Selected File
-    // ========================================
-
-    setSelectedFile(file);
-  };
-
-
-  // ========================================
-  // Handle Document Upload
-  // ========================================
-
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setUploadError(
-        "Please select a PDF file."
-      );
-
-      return;
-    }
-
-    if (!activeOrganizationId) {
-      setUploadError(
-        "No active organization selected."
-      );
-
-      return;
-    }
-
-
-    // ========================================
-    // Reset Upload State
-    // ========================================
-
-    setUploadError("");
-    setUploadSuccess("");
-    setIsUploading(true);
-
-
-    try {
-
-      // ========================================
-      // Upload PDF
-      // ========================================
-
-      await uploadKnowledgeDocument(
-        selectedFile
-      );
-
-
-      // ========================================
-      // Refresh Documents
-      // ========================================
-
-      await refetch();
-
-
-      // ========================================
-      // Reset File Selection
-      // ========================================
-
-      setSelectedFile(null);
-
-      const fileInput =
-        document.getElementById(
-          "knowledge-pdf"
-        );
-
-      if (fileInput) {
-        fileInput.value = "";
-      }
-
-
-      // ========================================
-      // Show Success Message
-      // ========================================
-
-      setUploadSuccess(
-        "Knowledge document uploaded and processed successfully."
-      );
-
-    } catch (uploadErrorResponse) {
-
-      // ========================================
-      // Handle Upload Error
-      // ========================================
-
-      setUploadError(
-        uploadErrorResponse
-          ?.response
-          ?.data
-          ?.message ||
-          "Something went wrong while uploading the knowledge document."
-      );
-
-    } finally {
-
-      // ========================================
-      // Finish Upload State
-      // ========================================
-
-      setIsUploading(false);
-    }
-  };
-
-
-  // ========================================
-  // Handle Document Delete
-  // ========================================
-
-  const handleDelete = async (
-    documentId,
-    fileName
-  ) => {
-    const confirmed =
-      window.confirm(
-        `Are you sure you want to delete "${fileName}"?`
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-
-    // ========================================
-    // Reset Delete State
-    // ========================================
-
-    setDeleteError("");
-    setDeletingDocumentId(
-      documentId
-    );
-
-
-    try {
-
-      // ========================================
-      // Delete Knowledge Document
-      // ========================================
-
-      await deleteKnowledgeDocument(
-        documentId
-      );
-
-
-      // ========================================
-      // Refresh Documents
-      // ========================================
-
-      await refetch();
-
-
-      // ========================================
-      // Clear AI Response If Needed
-      // ========================================
-
-      setAskedQuestion("");
-      setAnswer("");
-      setAskError("");
-
-    } catch (deleteErrorResponse) {
-
-      // ========================================
-      // Handle Delete Error
-      // ========================================
-
-      setDeleteError(
-        deleteErrorResponse
-          ?.response
-          ?.data
-          ?.message ||
-          "Something went wrong while deleting the knowledge document."
-      );
-
-    } finally {
-
-      // ========================================
-      // Finish Delete State
-      // ========================================
-
-      setDeletingDocumentId(null);
-    }
-  };
-
-
-  // ========================================
-  // Handle Ask AI
+  // AI Assistant Handler
   // ========================================
 
   const handleAskAI = async (
@@ -403,14 +116,6 @@ const Knowledge = () => {
     if (!trimmedQuestion) {
       setAskError(
         "Please enter a question."
-      );
-
-      return;
-    }
-
-    if (!hasReadyKnowledge) {
-      setAskError(
-        "Company knowledge is not ready yet."
       );
 
       return;
@@ -491,10 +196,10 @@ const Knowledge = () => {
 
 
   // ========================================
-  // Loading State
+  // Loading Organization Role
   // ========================================
 
-  if (isLoading) {
+  if (!user || !activeOrganizationId) {
     return (
       <div className="min-h-screen bg-slate-950 text-white">
 
@@ -508,7 +213,7 @@ const Knowledge = () => {
             />
 
             <p className="text-sm text-slate-400">
-              Loading company knowledge...
+              Loading organization...
             </p>
 
           </div>
@@ -521,10 +226,10 @@ const Knowledge = () => {
 
 
   // ========================================
-  // Error State
+  // Invalid Organization Role
   // ========================================
 
-  if (isError) {
+  if (!currentUserRole) {
     return (
       <div className="min-h-screen bg-slate-950 text-white">
 
@@ -538,12 +243,11 @@ const Knowledge = () => {
             />
 
             <p className="font-medium">
-              Unable to load company knowledge
+              Organization access unavailable
             </p>
 
             <p className="mt-2 text-sm text-slate-400">
-              {error?.response?.data?.message ||
-                "Something went wrong while fetching knowledge documents."}
+              Your membership in the active organization could not be determined.
             </p>
 
           </div>
@@ -639,236 +343,46 @@ const Knowledge = () => {
           </h2>
 
           <p className="mt-2 text-sm text-slate-400">
-            Manage the documents used by
-            SupportSphere's AI assistant.
+
+            {canViewKnowledge
+              ? "Manage and use your organization's company knowledge."
+              : "Ask SupportSphere AI questions about your organization's company knowledge."}
+
           </p>
 
         </div>
 
 
         {/* =================================================
-            UPLOAD DOCUMENT
+            INTERNAL KNOWLEDGE MANAGEMENT
+            OWNER / ADMIN / AGENT ONLY
         ================================================= */}
 
-        <section className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
-
-          <div className="mb-5">
-
-            <h3 className="text-xl font-semibold">
-              Upload Knowledge Document
-            </h3>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Upload a company PDF to add it
-              to your organization's knowledge base.
-            </p>
-
-          </div>
-
-
-          {/* File Selection */}
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-
-            <div className="flex-1">
-
-              <label
-                htmlFor="knowledge-pdf"
-                className="mb-2 block text-sm font-medium text-slate-300"
-              >
-                Company PDF
-              </label>
-
-              <input
-                id="knowledge-pdf"
-                type="file"
-                accept="application/pdf,.pdf"
-                onChange={
-                  handleFileChange
-                }
-                disabled={
-                  isUploading
-                }
-                className="block w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-
-              <p className="mt-2 text-xs text-slate-500">
-                PDF only · Maximum file size: 10 MB
-              </p>
-
-            </div>
-
-
-            {/* Upload Button */}
-
-            <button
-              type="button"
-              onClick={
-                handleUpload
-              }
-              disabled={
-                !selectedFile ||
-                isUploading
-              }
-              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-
-              {isUploading ? (
-
-                <>
-
-                  <Loader2
-                    size={18}
-                    className="animate-spin"
-                  />
-
-                  Uploading...
-
-                </>
-
-              ) : (
-
-                <>
-
-                  <Upload
-                    size={18}
-                  />
-
-                  Upload PDF
-
-                </>
-
-              )}
-
-            </button>
-
-          </div>
-
-
-          {/* Selected File */}
-
-          {selectedFile && (
-            <div className="mt-4 flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950 px-4 py-3">
-
-              <FileText
-                size={18}
-                className="shrink-0 text-blue-400"
-              />
-
-              <div className="min-w-0">
-
-                <p className="truncate text-sm font-medium text-slate-200">
-                  {selectedFile.name}
-                </p>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  {(
-                    selectedFile.size /
-                    (1024 * 1024)
-                  ).toFixed(2)}{" "}
-                  MB
-                </p>
-
-              </div>
-
-            </div>
-          )}
-
-
-          {/* Upload Error */}
-
-          {uploadError && (
-            <div className="mt-4 flex items-start gap-3 rounded-lg border border-red-900/50 bg-red-950/20 px-4 py-3">
-
-              <XCircle
-                size={18}
-                className="mt-0.5 shrink-0 text-red-500"
-              />
-
-              <p className="text-sm text-red-400">
-                {uploadError}
-              </p>
-
-            </div>
-          )}
-
-
-          {/* Upload Success */}
-
-          {uploadSuccess && (
-            <div className="mt-4 flex items-start gap-3 rounded-lg border border-green-900/50 bg-green-950/20 px-4 py-3">
-
-              <CheckCircle
-                size={18}
-                className="mt-0.5 shrink-0 text-green-500"
-              />
-
-              <p className="text-sm text-green-400">
-                {uploadSuccess}
-              </p>
-
-            </div>
-          )}
-
-        </section>
+        {canViewKnowledge && (
+          <KnowledgeDocumentsManager
+            activeOrganizationId={
+              activeOrganizationId
+            }
+            canManageKnowledge={
+              canManageKnowledge
+            }
+          />
+        )}
 
 
         {/* =================================================
-            KNOWLEDGE STATUS
+            AI KNOWLEDGE ASSISTANT
+            ALL ROLES
         ================================================= */}
 
-        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
-
-          <div className="flex items-start gap-4">
-
-            {hasReadyKnowledge ? (
-
-              <CheckCircle
-                size={24}
-                className="mt-0.5 shrink-0 text-green-500"
-              />
-
-            ) : (
-
-              <XCircle
-                size={24}
-                className="mt-0.5 shrink-0 text-slate-500"
-              />
-
-            )}
-
-            <div>
-
-              <h3 className="font-semibold">
-
-                {hasReadyKnowledge
-                  ? "Company knowledge is ready"
-                  : "Company knowledge is not ready"}
-
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-400">
-
-                {hasReadyKnowledge
-                  ? "The AI assistant can answer questions using your uploaded company knowledge."
-                  : "Upload and successfully process a company document to enable the AI assistant."}
-
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        {/* =================================================
-            ASK COMPANY KNOWLEDGE
-        ================================================= */}
-
-        {hasReadyKnowledge && (
-
-          <section className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
+        {canUseAI && (
+          <section
+            className={`rounded-xl border border-slate-800 bg-slate-900 p-6 ${
+              canViewKnowledge
+                ? ""
+                : "mt-0"
+            }`}
+          >
 
             {/* Assistant Header */}
 
@@ -889,8 +403,10 @@ const Knowledge = () => {
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
+
                   Ask questions about information contained
                   in your organization's uploaded documents.
+
                 </p>
 
               </div>
@@ -911,6 +427,7 @@ const Knowledge = () => {
                 type="text"
                 value={question}
                 onChange={(event) => {
+
                   setQuestion(
                     event.target.value
                   );
@@ -918,6 +435,7 @@ const Knowledge = () => {
                   if (askError) {
                     setAskError("");
                   }
+
                 }}
                 placeholder="Ask a question about your company knowledge..."
                 maxLength={1000}
@@ -926,6 +444,7 @@ const Knowledge = () => {
                 }
                 className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
               />
+
 
               <button
                 type="submit"
@@ -971,7 +490,9 @@ const Knowledge = () => {
             {/* Character Count */}
 
             <div className="mt-2 text-right text-xs text-slate-600">
+
               {question.length}/1000
+
             </div>
 
 
@@ -1043,33 +564,547 @@ const Knowledge = () => {
             )}
 
           </section>
-
         )}
 
+      </main>
 
-        {/* =================================================
-            DOCUMENTS
-        ================================================= */}
+    </div>
+  );
+};
 
-        <section>
 
-          <div className="mb-4">
+// =====================================================
+// Knowledge Documents Manager
+// OWNER / ADMIN / AGENT ONLY
+// =====================================================
+
+const KnowledgeDocumentsManager = ({
+  activeOrganizationId,
+  canManageKnowledge,
+}) => {
+
+  // ========================================
+  // Knowledge Documents Hook
+  // ========================================
+
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useKnowledgeDocuments(
+    activeOrganizationId
+  );
+
+
+  // ========================================
+  // Upload State
+  // ========================================
+
+  const [
+    selectedFile,
+    setSelectedFile,
+  ] = useState(null);
+
+  const [
+    isUploading,
+    setIsUploading,
+  ] = useState(false);
+
+  const [
+    uploadError,
+    setUploadError,
+  ] = useState("");
+
+  const [
+    uploadSuccess,
+    setUploadSuccess,
+  ] = useState("");
+
+
+  // ========================================
+  // Delete State
+  // ========================================
+
+  const [
+    deletingDocumentId,
+    setDeletingDocumentId,
+  ] = useState(null);
+
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState("");
+
+
+  // ========================================
+  // Knowledge Documents
+  // ========================================
+
+  const documents =
+    data?.data || [];
+
+
+  // ========================================
+  // Knowledge Readiness
+  // ========================================
+
+  const hasReadyKnowledge =
+    documents.some(
+      (document) =>
+        document.status === "READY"
+    );
+
+
+  // ========================================
+  // Handle File Selection
+  // ========================================
+
+  const handleFileChange = (
+    event
+  ) => {
+
+    const file =
+      event.target.files?.[0];
+
+    setUploadError("");
+    setUploadSuccess("");
+    setDeleteError("");
+
+
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+
+    // ========================================
+    // Validate File Type
+    // ========================================
+
+    if (
+      file.type !==
+      "application/pdf"
+    ) {
+
+      setSelectedFile(null);
+
+      setUploadError(
+        "Only PDF files are allowed."
+      );
+
+      event.target.value = "";
+
+      return;
+    }
+
+
+    // ========================================
+    // Validate File Size
+    // ========================================
+
+    const maxFileSize =
+      10 * 1024 * 1024;
+
+    if (
+      file.size >
+      maxFileSize
+    ) {
+
+      setSelectedFile(null);
+
+      setUploadError(
+        "PDF file size must not exceed 10 MB."
+      );
+
+      event.target.value = "";
+
+      return;
+    }
+
+
+    // ========================================
+    // Store Selected File
+    // ========================================
+
+    setSelectedFile(file);
+  };
+
+
+  // ========================================
+  // Handle Document Upload
+  // ========================================
+
+  const handleUpload = async () => {
+
+    if (!selectedFile) {
+
+      setUploadError(
+        "Please select a PDF file."
+      );
+
+      return;
+    }
+
+
+    if (!activeOrganizationId) {
+
+      setUploadError(
+        "No active organization selected."
+      );
+
+      return;
+    }
+
+
+    // ========================================
+    // Reset Upload State
+    // ========================================
+
+    setUploadError("");
+    setUploadSuccess("");
+    setIsUploading(true);
+
+
+    try {
+
+      // ========================================
+      // Upload PDF
+      // ========================================
+
+      await uploadKnowledgeDocument(
+        selectedFile
+      );
+
+
+      // ========================================
+      // Refresh Documents
+      // ========================================
+
+      await refetch();
+
+
+      // ========================================
+      // Reset File Selection
+      // ========================================
+
+      setSelectedFile(null);
+
+      const fileInput =
+        document.getElementById(
+          "knowledge-pdf"
+        );
+
+      if (fileInput) {
+        fileInput.value = "";
+      }
+
+
+      // ========================================
+      // Show Success Message
+      // ========================================
+
+      setUploadSuccess(
+        "Knowledge document uploaded and processed successfully."
+      );
+
+    } catch (uploadErrorResponse) {
+
+      // ========================================
+      // Handle Upload Error
+      // ========================================
+
+      setUploadError(
+        uploadErrorResponse
+          ?.response
+          ?.data
+          ?.message ||
+          "Something went wrong while uploading the knowledge document."
+      );
+
+    } finally {
+
+      // ========================================
+      // Finish Upload State
+      // ========================================
+
+      setIsUploading(false);
+    }
+  };
+
+
+  // ========================================
+  // Handle Document Delete
+  // ========================================
+
+  const handleDelete = async (
+    documentId,
+    fileName
+  ) => {
+
+    const confirmed =
+      window.confirm(
+        `Are you sure you want to delete "${fileName}"?`
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    // ========================================
+    // Reset Delete State
+    // ========================================
+
+    setDeleteError("");
+    setDeletingDocumentId(
+      documentId
+    );
+
+
+    try {
+
+      // ========================================
+      // Delete Knowledge Document
+      // ========================================
+
+      await deleteKnowledgeDocument(
+        documentId
+      );
+
+
+      // ========================================
+      // Refresh Documents
+      // ========================================
+
+      await refetch();
+
+
+    } catch (deleteErrorResponse) {
+
+      // ========================================
+      // Handle Delete Error
+      // ========================================
+
+      setDeleteError(
+        deleteErrorResponse
+          ?.response
+          ?.data
+          ?.message ||
+          "Something went wrong while deleting the knowledge document."
+      );
+
+    } finally {
+
+      // ========================================
+      // Finish Delete State
+      // ========================================
+
+      setDeletingDocumentId(null);
+    }
+  };
+
+
+  // ========================================
+  // Loading State
+  // ========================================
+
+  if (isLoading) {
+
+    return (
+      <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
+
+        <Loader2
+          size={32}
+          className="mx-auto mb-3 animate-spin text-blue-500"
+        />
+
+        <p className="text-sm text-slate-400">
+          Loading company knowledge...
+        </p>
+
+      </div>
+    );
+  }
+
+
+  // ========================================
+  // Error State
+  // ========================================
+
+  if (isError) {
+
+    return (
+      <div className="mb-8 rounded-xl border border-red-900/50 bg-red-950/20 p-10 text-center">
+
+        <XCircle
+          size={32}
+          className="mx-auto mb-3 text-red-500"
+        />
+
+        <p className="font-medium">
+          Unable to load company knowledge
+        </p>
+
+        <p className="mt-2 text-sm text-slate-400">
+
+          {error?.response?.data?.message ||
+            "Something went wrong while fetching knowledge documents."}
+
+        </p>
+
+      </div>
+    );
+  }
+
+
+  return (
+    <div>
+
+
+      {/* =================================================
+          UPLOAD DOCUMENT
+          OWNER / ADMIN ONLY
+      ================================================= */}
+
+      {canManageKnowledge && (
+        <section className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
+
+          <div className="mb-5">
 
             <h3 className="text-xl font-semibold">
-              Knowledge Documents
+              Upload Knowledge Document
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Documents available to your organization.
+
+              Upload a company PDF to add it
+              to your organization's knowledge base.
+
             </p>
 
           </div>
 
 
-          {/* Delete Error */}
+          {/* File Selection */}
 
-          {deleteError && (
-            <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-900/50 bg-red-950/20 px-4 py-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+
+            <div className="flex-1">
+
+              <label
+                htmlFor="knowledge-pdf"
+                className="mb-2 block text-sm font-medium text-slate-300"
+              >
+                Company PDF
+              </label>
+
+              <input
+                id="knowledge-pdf"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={
+                  handleFileChange
+                }
+                disabled={
+                  isUploading
+                }
+                className="block w-full cursor-pointer rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-300 file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+
+              <p className="mt-2 text-xs text-slate-500">
+
+                PDF only · Maximum file size: 10 MB
+
+              </p>
+
+            </div>
+
+
+            {/* Upload Button */}
+
+            <button
+              type="button"
+              onClick={
+                handleUpload
+              }
+              disabled={
+                !selectedFile ||
+                isUploading
+              }
+              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+
+              {isUploading ? (
+
+                <>
+
+                  <Loader2
+                    size={18}
+                    className="animate-spin"
+                  />
+
+                  Uploading...
+
+                </>
+
+              ) : (
+
+                <>
+
+                  <Upload
+                    size={18}
+                  />
+
+                  Upload PDF
+
+                </>
+
+              )}
+
+            </button>
+
+          </div>
+
+
+          {/* Selected File */}
+
+          {selectedFile && (
+            <div className="mt-4 flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-950 px-4 py-3">
+
+              <FileText
+                size={18}
+                className="shrink-0 text-blue-400"
+              />
+
+              <div className="min-w-0">
+
+                <p className="truncate text-sm font-medium text-slate-200">
+                  {selectedFile.name}
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+
+                  {(
+                    selectedFile.size /
+                    (1024 * 1024)
+                  ).toFixed(2)}{" "}
+                  MB
+
+                </p>
+
+              </div>
+
+            </div>
+          )}
+
+
+          {/* Upload Error */}
+
+          {uploadError && (
+            <div className="mt-4 flex items-start gap-3 rounded-lg border border-red-900/50 bg-red-950/20 px-4 py-3">
 
               <XCircle
                 size={18}
@@ -1077,98 +1112,211 @@ const Knowledge = () => {
               />
 
               <p className="text-sm text-red-400">
-                {deleteError}
+                {uploadError}
               </p>
 
             </div>
           )}
 
 
-          {documents.length === 0 ? (
+          {/* Upload Success */}
 
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
+          {uploadSuccess && (
+            <div className="mt-4 flex items-start gap-3 rounded-lg border border-green-900/50 bg-green-950/20 px-4 py-3">
 
-              <FileText
-                size={36}
-                className="mx-auto mb-3 text-slate-600"
+              <CheckCircle
+                size={18}
+                className="mt-0.5 shrink-0 text-green-500"
               />
 
-              <p className="font-medium">
-                No knowledge documents
-              </p>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Upload a company PDF to create
-                your knowledge base.
+              <p className="text-sm text-green-400">
+                {uploadSuccess}
               </p>
 
             </div>
+          )}
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          KNOWLEDGE STATUS
+      ================================================= */}
+
+      <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
+
+        <div className="flex items-start gap-4">
+
+          {hasReadyKnowledge ? (
+
+            <CheckCircle
+              size={24}
+              className="mt-0.5 shrink-0 text-green-500"
+            />
 
           ) : (
 
-            <div className="space-y-4">
+            <XCircle
+              size={24}
+              className="mt-0.5 shrink-0 text-slate-500"
+            />
 
-              {documents.map(
-                (document) => (
+          )}
 
-                  <div
-                    key={document.id}
-                    className="rounded-xl border border-slate-800 bg-slate-900 p-5"
-                  >
+          <div>
 
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="font-semibold">
 
-                      {/* Document Information */}
+              {hasReadyKnowledge
+                ? "Company knowledge is ready"
+                : "Company knowledge is not ready"}
 
-                      <div className="flex min-w-0 items-start gap-4">
+            </h3>
 
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-800">
+            <p className="mt-1 text-sm text-slate-400">
 
-                          <FileText
-                            size={20}
-                            className="text-slate-400"
-                          />
+              {hasReadyKnowledge
+                ? "The AI assistant can answer questions using your uploaded company knowledge."
+                : "Upload and successfully process a company document to enable the AI assistant."}
 
-                        </div>
+            </p>
 
-                        <div className="min-w-0">
+          </div>
 
-                          <h4 className="truncate font-medium">
-                            {document.fileName}
-                          </h4>
+        </div>
 
-                          <p className="mt-1 text-xs text-slate-500">
-                            {document.chunkCount} chunks
-                          </p>
+      </div>
 
-                        </div>
+
+      {/* =================================================
+          DOCUMENTS
+      ================================================= */}
+
+      <section className="mb-8">
+
+        <div className="mb-4">
+
+          <h3 className="text-xl font-semibold">
+            Knowledge Documents
+          </h3>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Documents available to your organization.
+          </p>
+
+        </div>
+
+
+        {/* Delete Error */}
+
+        {deleteError && (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-900/50 bg-red-950/20 px-4 py-3">
+
+            <XCircle
+              size={18}
+              className="mt-0.5 shrink-0 text-red-500"
+            />
+
+            <p className="text-sm text-red-400">
+              {deleteError}
+            </p>
+
+          </div>
+        )}
+
+
+        {documents.length === 0 ? (
+
+          <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
+
+            <FileText
+              size={36}
+              className="mx-auto mb-3 text-slate-600"
+            />
+
+            <p className="font-medium">
+              No knowledge documents
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
+
+              {canManageKnowledge
+                ? "Upload a company PDF to create your knowledge base."
+                : "No company knowledge documents are currently available."}
+
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="space-y-4">
+
+            {documents.map(
+              (document) => (
+
+                <div
+                  key={document.id}
+                  className="rounded-xl border border-slate-800 bg-slate-900 p-5"
+                >
+
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                    {/* Document Information */}
+
+                    <div className="flex min-w-0 items-start gap-4">
+
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-800">
+
+                        <FileText
+                          size={20}
+                          className="text-slate-400"
+                        />
 
                       </div>
 
+                      <div className="min-w-0">
 
-                      {/* Document Actions */}
+                        <h4 className="truncate font-medium">
+                          {document.fileName}
+                        </h4>
 
-                      <div className="flex items-center gap-3">
+                        <p className="mt-1 text-xs text-slate-500">
+                          {document.chunkCount} chunks
+                        </p>
 
-                        {/* Document Status */}
+                      </div>
 
-                        <span
-                          className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${
-                            document.status ===
-                            "READY"
-                              ? "bg-green-500/10 text-green-400"
-                              : document.status ===
-                                "PROCESSING"
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-red-500/10 text-red-400"
-                          }`}
-                        >
-                          {document.status}
-                        </span>
+                    </div>
 
 
-                        {/* Delete Button */}
+                    {/* Document Actions */}
 
+                    <div className="flex items-center gap-3">
+
+                      {/* Document Status */}
+
+                      <span
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${
+                          document.status ===
+                          "READY"
+                            ? "bg-green-500/10 text-green-400"
+                            : document.status ===
+                              "PROCESSING"
+                            ? "bg-yellow-500/10 text-yellow-400"
+                            : "bg-red-500/10 text-red-400"
+                        }`}
+                      >
+
+                        {document.status}
+
+                      </span>
+
+
+                      {/* Delete Button */}
+
+                      {canManageKnowledge && (
                         <button
                           type="button"
                           onClick={() =>
@@ -1179,7 +1327,7 @@ const Knowledge = () => {
                           }
                           disabled={
                             deletingDocumentId ===
-                            document.id ||
+                              document.id ||
                             isUploading
                           }
                           title="Delete document"
@@ -1203,23 +1351,22 @@ const Knowledge = () => {
                           )}
 
                         </button>
-
-                      </div>
+                      )}
 
                     </div>
 
                   </div>
 
-                )
-              )}
+                </div>
 
-            </div>
+              )
+            )}
 
-          )}
+          </div>
 
-        </section>
+        )}
 
-      </main>
+      </section>
 
     </div>
   );
