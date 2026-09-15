@@ -31,6 +31,51 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  /**
+   * Current Organization Membership
+   *
+   * Finds the logged-in user's membership
+   * for the currently active organization.
+   */
+  const currentMembership =
+    user?.memberships?.find(
+      (membership) =>
+        membership.organizationId ===
+        activeOrganizationId
+    );
+
+  const currentUserRole =
+    currentMembership?.role;
+
+  /**
+   * Organization Management Permissions
+   *
+   * Only OWNER and ADMIN can access
+   * Organization Members and Audit Logs.
+   */
+  const canManageOrganization =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN";
+
+  /**
+   * Company Knowledge Permissions
+   *
+   * All organization roles can access
+   * the Company Knowledge page.
+   *
+   * OWNER, ADMIN and AGENT can view/manage
+   * the internal knowledge area according to
+   * their permissions.
+   *
+   * CUSTOMER can access the page specifically
+   * to use the AI Knowledge Assistant.
+   */
+  const canViewKnowledge =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT" ||
+    currentUserRole === "CUSTOMER";
+
   const [status, setStatus] = useState("ALL");
   const [search, setSearch] = useState("");
 
@@ -138,6 +183,9 @@ const Dashboard = () => {
    * Open Company Knowledge
    *
    * Uses existing Knowledge.jsx
+   *
+   * Customers can access this page
+   * to use the AI Knowledge Assistant.
    */
   const handleKnowledge = () => {
     navigate("/knowledge");
@@ -173,6 +221,7 @@ const Dashboard = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
           {/* Logo */}
+
           <div className="flex items-center gap-3">
 
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
@@ -192,13 +241,17 @@ const Dashboard = () => {
           </div>
 
           {/* Organization + User */}
+
           <div className="flex items-center gap-4">
 
             {/* Organization Switcher */}
+
             <OrganizationSwitcher />
 
             {/* User */}
+
             <div className="hidden text-right sm:block">
+
               <p className="text-sm font-medium">
                 {user?.name}
               </p>
@@ -206,6 +259,7 @@ const Dashboard = () => {
               <p className="text-xs text-slate-500">
                 {user?.email}
               </p>
+
             </div>
 
             <button
@@ -221,6 +275,7 @@ const Dashboard = () => {
             </button>
 
           </div>
+
         </div>
       </header>
 
@@ -238,6 +293,7 @@ const Dashboard = () => {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
           <div>
+
             <p className="text-sm text-slate-500">
               Dashboard
             </p>
@@ -250,49 +306,63 @@ const Dashboard = () => {
               Create, manage and track your
               support requests.
             </p>
+
           </div>
 
 
-          {/* Organization Members + Audit Logs + Knowledge + Create Ticket */}
+          {/* =================================================
+              ROLE-BASED DASHBOARD ACTIONS
+          ================================================= */}
+
           <div className="flex flex-wrap gap-3">
 
             {/* Organization Members */}
-            <button
-              type="button"
-              onClick={handleOrganizationMembers}
-              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              <Users size={18} />
 
-              Organization Members
-            </button>
+            {canManageOrganization && (
+              <button
+                type="button"
+                onClick={handleOrganizationMembers}
+                className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                <Users size={18} />
+
+                Organization Members
+              </button>
+            )}
 
 
             {/* Audit Logs */}
-            <button
-              type="button"
-              onClick={handleAuditLogs}
-              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              <Activity size={18} />
 
-              Audit Logs
-            </button>
+            {canManageOrganization && (
+              <button
+                type="button"
+                onClick={handleAuditLogs}
+                className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                <Activity size={18} />
+
+                Audit Logs
+              </button>
+            )}
 
 
             {/* Company Knowledge */}
-            <button
-              type="button"
-              onClick={handleKnowledge}
-              className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              <FileText size={18} />
 
-              Company Knowledge
-            </button>
+            {canViewKnowledge && (
+              <button
+                type="button"
+                onClick={handleKnowledge}
+                className="flex w-fit items-center gap-2 rounded-lg border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+              >
+                <FileText size={18} />
+
+                Company Knowledge
+              </button>
+            )}
 
 
             {/* Create Ticket */}
+
             <button
               type="button"
               onClick={handleCreateTicket}
@@ -315,6 +385,7 @@ const Dashboard = () => {
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
 
           {/* Total */}
+
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
 
             <p className="text-sm text-slate-400">
@@ -329,6 +400,7 @@ const Dashboard = () => {
 
 
           {/* Open */}
+
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
 
             <p className="text-sm text-slate-400">
@@ -343,6 +415,7 @@ const Dashboard = () => {
 
 
           {/* Closed */}
+
           <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
 
             <p className="text-sm text-slate-400">
@@ -365,6 +438,7 @@ const Dashboard = () => {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row">
 
           {/* Search */}
+
           <div className="relative flex-1">
 
             <Search
@@ -384,6 +458,7 @@ const Dashboard = () => {
 
 
             {/* Clear Search */}
+
             {search && (
               <button
                 type="button"
@@ -399,6 +474,7 @@ const Dashboard = () => {
 
 
           {/* Status Filter */}
+
           <select
             value={status}
             onChange={(event) =>
@@ -454,6 +530,7 @@ const Dashboard = () => {
         <div className="space-y-4">
 
           {/* Initial Loading */}
+
           {isLoading ? (
 
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
@@ -508,6 +585,7 @@ const Dashboard = () => {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 
                   {/* Ticket Content */}
+
                   <div className="min-w-0 flex-1">
 
                     <h3 className="truncate text-lg font-semibold">
@@ -521,11 +599,13 @@ const Dashboard = () => {
                     <div className="mt-4 flex flex-wrap items-center gap-3">
 
                       {/* Ticket ID */}
+
                       <p className="text-xs text-slate-600">
                         ID: {ticket.id}
                       </p>
 
                       {/* Created */}
+
                       <p className="text-xs text-slate-600">
                         Created{" "}
                         {new Date(
@@ -539,6 +619,7 @@ const Dashboard = () => {
 
 
                   {/* Status */}
+
                   <span
                     className={`w-fit shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
                       ticket.status === "OPEN"

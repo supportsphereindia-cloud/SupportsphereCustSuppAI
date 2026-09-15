@@ -86,12 +86,44 @@ const TicketDetails = () => {
   const { id } = useParams();
 
   const {
+    user,
     activeOrganizationId,
   } = useAuth();
 
   const navigate = useNavigate();
 
   const queryClient = useQueryClient();
+
+
+  // ========================================
+  // Current User Role
+  // ========================================
+
+  const currentMembership =
+    user?.memberships?.find(
+      (membership) =>
+        membership.organizationId ===
+        activeOrganizationId
+    );
+
+  const currentUserRole =
+    currentMembership?.role;
+
+  const canEditTicket =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT" ||
+    currentUserRole === "CUSTOMER";
+
+  const canAnalyzeTicket =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT";
+
+  const canCloseTicket =
+    currentUserRole === "OWNER" ||
+    currentUserRole === "ADMIN" ||
+    currentUserRole === "AGENT";
 
 
   // ========================================
@@ -723,7 +755,8 @@ const TicketDetails = () => {
               Actions
           ======================================== */}
 
-          {!isClosed && (
+          {canEditTicket &&
+            !isClosed && (
 
             <div className="flex flex-col gap-3 border-t border-slate-800 p-6 sm:flex-row sm:justify-end">
 
@@ -757,64 +790,72 @@ const TicketDetails = () => {
                       AI Analysis
                   ======================================== */}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      aiMutation.mutate()
-                    }
-                    disabled={
-                      aiMutation.isPending
-                    }
-                    className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                  {canAnalyzeTicket && (
 
-                    {aiMutation.isPending ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        aiMutation.mutate()
+                      }
+                      disabled={
+                        aiMutation.isPending
+                      }
+                      className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-medium transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
 
-                      <Loader2
-                        size={16}
-                        className="animate-spin"
-                      />
+                      {aiMutation.isPending ? (
 
-                    ) : (
+                        <Loader2
+                          size={16}
+                          className="animate-spin"
+                        />
 
-                      <Sparkles
-                        size={16}
-                      />
+                      ) : (
 
-                    )}
+                        <Sparkles
+                          size={16}
+                        />
+
+                      )}
 
 
-                    {aiMutation.isPending
-                      ? "Analyzing..."
-                      : aiAnalysis
-                      ? "Re-analyze with AI"
-                      : "Analyze with AI"}
+                      {aiMutation.isPending
+                        ? "Analyzing..."
+                        : aiAnalysis
+                        ? "Re-analyze with AI"
+                        : "Analyze with AI"}
 
-                  </button>
+                    </button>
+
+                  )}
 
 
                   {/* ========================================
                       Close
                   ======================================== */}
 
-                  <button
-                    type="button"
-                    onClick={
-                      handleCloseClick
-                    }
-                    disabled={
-                      closeMutation.isPending
-                    }
-                    className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                  {canCloseTicket && (
 
-                    <CheckCircle
-                      size={16}
-                    />
+                    <button
+                      type="button"
+                      onClick={
+                        handleCloseClick
+                      }
+                      disabled={
+                        closeMutation.isPending
+                      }
+                      className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
 
-                    Close Ticket
+                      <CheckCircle
+                        size={16}
+                      />
 
-                  </button>
+                      Close Ticket
+
+                    </button>
+
+                  )}
 
                 </>
 
