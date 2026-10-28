@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Navigate,
@@ -7,6 +8,7 @@ import {
 
 import Login from "./pages/login";
 import Register from "./pages/Register";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import CreateTicket from "./pages/CreateTicket";
 import TicketDetails from "./pages/TicketDetails";
@@ -23,6 +25,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
+
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
 
         <Route
           path="/login"
@@ -89,6 +96,8 @@ function App() {
           }
         />
 
+        {/* Ticket Routes */}
+
         <Route
           path="/tickets/create"
           element={
@@ -104,18 +113,6 @@ function App() {
             <OrganizationRoute>
               <TicketDetails />
             </OrganizationRoute>
-          }
-        />
-
-        {/* Default Route */}
-
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to="/dashboard"
-              replace
-            />
           }
         />
 
